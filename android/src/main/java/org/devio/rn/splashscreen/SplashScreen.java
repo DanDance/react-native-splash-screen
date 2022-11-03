@@ -1,107 +1,58 @@
-package org.devio.rn.splashscreen;
+package com.postilla;
 
-import android.app.Activity;
-import android.app.Dialog;
-import android.os.Build;
-import android.view.WindowManager;
+import com.facebook.react.ReactActivity;
+import com.facebook.react.ReactActivityDelegate;
+import com.facebook.react.ReactRootView;
+import org.devio.rn.splashscreen.SplashScreen;
+import android.os.Bundle;
+import android.webkit.WebView;
 
-import java.lang.ref.WeakReference;
+public class MainActivity extends ReactActivity {
 
-/**
- * SplashScreen
- * 启动屏
- * from：http://www.devio.org
- * Author:CrazyCodeBoy
- * GitHub:https://github.com/crazycodeboy
- * Email:crazycodeboy@gmail.com
- */
-public class SplashScreen {
-    private static Dialog mSplashDialog;
-    private static WeakReference<Activity> mActivity;
-
-    /**
-     * 打开启动屏
-     */
-    public static void show(final Activity activity, final int themeResId, final boolean fullScreen) {
-        if (activity == null) return;
-        mActivity = new WeakReference<Activity>(activity);
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (!activity.isFinishing()) {
-                    mSplashDialog = new Dialog(activity, themeResId);
-                    mSplashDialog.setContentView(R.layout.launch_screen);
-                    mSplashDialog.setCancelable(false);
-                    if (fullScreen) {
-                        setActivityAndroidP(mSplashDialog);
-                    }
-                    if (!mSplashDialog.isShowing()) {
-                        mSplashDialog.show();
-                    }
-                }
-            }
-        });
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen.show(this, R.style.SplashScreen_SplashTheme, false, R.layout.yellow_launch);
+        WebView.setWebContentsDebuggingEnabled(true);
+        super.onCreate(savedInstanceState);
     }
 
-    /**
-     * 打开启动屏
-     */
-    public static void show(final Activity activity, final boolean fullScreen) {
-        int resourceId = fullScreen ? R.style.SplashScreen_Fullscreen : R.style.SplashScreen_SplashTheme;
+  /**
+   * Returns the name of the main component registered from JavaScript. This is used to schedule
+   * rendering of the component.
+   */
+  @Override
+  protected String getMainComponentName() {
+    return "Postilla";
+  }
 
-        show(activity, resourceId, fullScreen);
+  /**
+   * Returns the instance of the {@link ReactActivityDelegate}. There the RootView is created and
+   * you can specify the renderer you wish to use - the new renderer (Fabric) or the old renderer
+   * (Paper).
+   */
+  @Override
+  protected ReactActivityDelegate createReactActivityDelegate() {
+    return new MainActivityDelegate(this, getMainComponentName());
+  }
+
+  public static class MainActivityDelegate extends ReactActivityDelegate {
+    public MainActivityDelegate(ReactActivity activity, String mainComponentName) {
+      super(activity, mainComponentName);
     }
 
-    /**
-     * 打开启动屏
-     */
-    public static void show(final Activity activity) {
-        show(activity, false);
+    @Override
+    protected ReactRootView createRootView() {
+      ReactRootView reactRootView = new ReactRootView(getContext());
+      // If you opted-in for the New Architecture, we enable the Fabric Renderer.
+      reactRootView.setIsFabric(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED);
+      return reactRootView;
     }
 
-    /**
-     * 关闭启动屏
-     */
-    public static void hide(Activity activity) {
-        if (activity == null) {
-            if (mActivity == null) {
-                return;
-            }
-            activity = mActivity.get();
-        }
-
-        if (activity == null) return;
-
-        final Activity _activity = activity;
-
-        _activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mSplashDialog != null && mSplashDialog.isShowing()) {
-                    boolean isDestroyed = false;
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        isDestroyed = _activity.isDestroyed();
-                    }
-
-                    if (!_activity.isFinishing() && !isDestroyed) {
-                        mSplashDialog.dismiss();
-                    }
-                    mSplashDialog = null;
-                }
-            }
-        });
+    @Override
+    protected boolean isConcurrentRootEnabled() {
+      // If you opted-in for the New Architecture, we enable Concurrent Root (i.e. React 18).
+      // More on this on https://reactjs.org/blog/2022/03/29/react-v18.html
+      return BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
     }
-
-    private static void setActivityAndroidP(Dialog dialog) {
-        //设置全屏展示
-        if (Build.VERSION.SDK_INT >= 28) {
-            if (dialog != null && dialog.getWindow() != null) {
-                dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);//全屏显示
-                WindowManager.LayoutParams lp = dialog.getWindow().getAttributes();
-                lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-                dialog.getWindow().setAttributes(lp);
-            }
-        }
-    }
+  }
 }
